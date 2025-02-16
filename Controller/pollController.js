@@ -20,23 +20,22 @@ const fetchingAllPolls = async (req, res) => {
 };
 
 const voting = async (req, res) => {
+    
   try {
     const { id } = req.params;
     const { optionIndex } = req.body;
 
-    const updateResult = await Polling.findByIdAndUpdate(
-      id,
-      { _id: id, [`options.${optionIndex}`]: { $exists: true } },
-      {
-        $inc: { [`options.${optionIndex}.votes`]: 1 },
+    const updateResult = await Polling.findOneAndUpdate(
+        { _id: id },
+        { $inc: { [`options.${optionIndex}.votes`]: 1 } },
+        { new: true } // Return the updated document
+      );
+  
+      if (!updateResult) {
+        return res.status(404).json({ error: "Poll not found or option index is invalid" });
       }
-    );
-
-    if (updateResult.matchedCount === 0) {
-      return res.status(404).json({ error: "Poll not found or option index is invalid" });
-    }
-
-    res.json({ poll: updateResult });
+  
+      res.json({ poll: updateResult });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "An error occurred while voting on the poll" });
